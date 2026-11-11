@@ -42,7 +42,17 @@ jobs:
           fi
           npx cap sync android
 
-          # 1. Forçar Android 15 (API 35) e dependências estáveis AndroidX compatíveis com o GitHub Actions runner
+          # 1. Configurar gradle.properties com SDK 35 para todos os subprojetos
+          cat << 'EOF' > android/gradle.properties
+          org.gradle.jvmargs=-Xmx2048m -XX:MaxMetaspaceSize=512m
+          android.useAndroidX=true
+          android.enableJetifier=true
+          compileSdkVersion=35
+          targetSdkVersion=35
+          minSdkVersion=24
+          EOF
+
+          # 2. Forçar Android 15 (API 35) e dependências estáveis AndroidX compatíveis com o GitHub Actions runner
           cat << 'EOF' > android/variables.gradle
           ext {
               minSdkVersion = 24
@@ -62,7 +72,7 @@ jobs:
           }
           EOF
 
-          # 2. Garantir criação das cores do tema no colors.xml (necessário para AAPT2)
+          # 3. Garantir criação das cores do tema no colors.xml (necessário para AAPT2)
           mkdir -p android/app/src/main/res/values
           cat << 'EOF' > android/app/src/main/res/values/colors.xml
           <?xml version="1.0" encoding="utf-8"?>
@@ -73,7 +83,7 @@ jobs:
           </resources>
           EOF
 
-          # 3. Garantir google-services.json para o Google Services plugin
+          # 4. Garantir google-services.json para o Google Services plugin
           if [ ! -f "android/app/google-services.json" ]; then
             cat << 'EOF' > android/app/google-services.json
           {
@@ -108,8 +118,10 @@ jobs:
           EOF
           fi
 
-      - name: 7. Conceder permissão de execução ao Gradle Wrapper
+      - name: 7. Aceitar licenças do Android SDK e configurar permissões
         run: |
+          yes | sdkmanager --licenses || true
+          sdkmanager "platforms;android-35" "platforms;android-36" || true
           chmod +x android/gradlew
 
       - name: 8. Compilar APK Debug
