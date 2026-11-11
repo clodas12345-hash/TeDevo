@@ -1,0 +1,9 @@
+{
+  "name": "TeDevo",
+  "description": "Comunidade de controle de dívidas e contas compartilhadas por telefone com confirmação de pendências e pagamentos parciais.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
