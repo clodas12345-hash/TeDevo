@@ -16,11 +16,11 @@ jobs:
       - name: 1. Baixar código do repositório
         uses: actions/checkout@v4
 
-      - name: 2. Configurar Java JDK 17
+      - name: 2. Configurar Java JDK 21
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: '17'
+          java-version: '21'
           cache: 'gradle'
 
       - name: 3. Configurar Node.js (LTS 22)
@@ -45,7 +45,7 @@ jobs:
       - name: 8. Compilar APK Debug
         run: |
           cd android
-          ./gradlew assembleDebug -x lint --stacktrace --no-daemon
+          ./gradlew assembleDebug --info --stacktrace --no-daemon
 
       - name: 9. Salvar APK gerado como Artefato
         uses: actions/upload-artifact@v4
