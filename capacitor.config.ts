@@ -1,14 +1,14 @@
-{
-  "appId": "com.tedevo.app",
-  "appName": "TeDevo",
-  "webDir": "dist",
-  "server": {
-    "androidScheme": "https",
-    "cleartext": true
+export default {
+  appId: 'com.tedevo.app',
+  appName: 'TeDevo',
+  webDir: 'dist',
+  server: {
+    androidScheme: 'https',
+    cleartext: true
   },
-  "plugins": {
-    "PushNotifications": {
-      "presentationOptions": ["badge", "sound", "alert"]
+  plugins: {
+    PushNotifications: {
+      presentationOptions: ["badge", "sound", "alert"]
     }
   }
-}
+};
