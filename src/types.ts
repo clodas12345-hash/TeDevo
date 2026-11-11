@@ -19,6 +19,9 @@ export interface Debt {
   dueDate?: string;
   status: 'pending_confirmation' | 'confirmed' | 'settled' | 'rejected';
   sharedPhones?: string[];
+  installmentNumber?: number;
+  totalInstallments?: number;
+  parentInstallmentId?: string;
 }
 
 export interface Payment {

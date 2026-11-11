@@ -289,6 +289,7 @@ export default function App() {
             currentUser={currentUser}
             users={users}
             recurring={recurring}
+            debts={debts}
             onAddRecurring={handleAddRecurring}
           />
         )}

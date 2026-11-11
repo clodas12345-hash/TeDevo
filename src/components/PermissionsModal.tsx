@@ -8,7 +8,6 @@ import {
   CheckCircle2, 
   AlertCircle, 
   Smartphone, 
-  Github, 
   X,
   Play,
   Square
@@ -189,10 +188,10 @@ export function PermissionsModal({ onClose }: PermissionsModalProps) {
             </div>
             <div>
               <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white leading-tight">
-                Permissões & Gerar APK
+                Permissões do Dispositivo
               </h3>
               <p className="text-[11px] text-slate-500 mt-0.5">
-                Configurado para compilar o APK no GitHub Actions com todas as permissões.
+                Gerencie e teste as permissões do seu celular para fotos, notificações e lembretes.
               </p>
             </div>
           </div>
@@ -212,18 +211,6 @@ export function PermissionsModal({ onClose }: PermissionsModalProps) {
 
         {/* Scrollable Body */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 overscroll-contain">
-          
-          {/* GitHub APK Workflow Status Banner */}
-          <div className="p-3.5 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 text-xs text-indigo-950 dark:text-indigo-200 space-y-1.5">
-            <div className="flex items-center gap-2 font-bold text-xs text-indigo-900 dark:text-indigo-100">
-              <Github className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
-              <span>GitHub Actions: <code>.github/workflows/build-apk.yml</code></span>
-            </div>
-            <p className="text-indigo-800 dark:text-indigo-300 leading-relaxed text-[11px]">
-              Ao enviar o código para o GitHub, o APK é gerado automaticamente e fica disponível para download direto na aba <strong>Actions</strong> do seu repositório.
-            </p>
-          </div>
-
           {/* Permissions Grid */}
           <div className="space-y-3">
             
@@ -420,7 +407,7 @@ export function PermissionsModal({ onClose }: PermissionsModalProps) {
       <div className="p-3.5 sm:p-4 border-t border-slate-100 dark:border-slate-800 shrink-0 bg-white dark:bg-slate-900 flex items-center justify-between text-xs text-slate-500 z-10">
         <div className="flex items-center gap-1.5">
           <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-          <span className="text-[11px]">Todas as 6 permissões no <code>AndroidManifest.xml</code></span>
+          <span className="text-[11px]">Permissões nativas do seu dispositivo ativas</span>
         </div>
         <button
           onClick={onClose}

@@ -32,6 +32,9 @@ interface Debt {
   dueDate?: string;
   status: 'pending_confirmation' | 'confirmed' | 'settled' | 'rejected';
   sharedPhones?: string[]; // Se for divisão entre vários
+  installmentNumber?: number;
+  totalInstallments?: number;
+  parentInstallmentId?: string;
 }
 
 interface Payment {
@@ -308,10 +311,86 @@ app.post('/api/users', (req, res) => {
   res.json({ success: true, user: newUser });
 });
 
-// Add Debt
+// Add Debt (single or installment / parcelada)
 app.post('/api/debts', (req, res) => {
-  const { creatorPhone, creditorPhone, debtorPhone, amount, description, category, dueDate, sharedPhones } = req.body;
+  const {
+    creatorPhone,
+    creditorPhone,
+    debtorPhone,
+    amount,
+    description,
+    category,
+    dueDate,
+    sharedPhones,
+    isInstallment,
+    installmentsCount,
+    installmentFrequency
+  } = req.body;
   const data = loadData();
+
+  const numAmount = Number(amount);
+  const count = isInstallment && Number(installmentsCount) > 1
+    ? Math.min(Math.max(2, Number(installmentsCount)), 48)
+    : 1;
+
+  if (count > 1) {
+    const parentInstallmentId = 'inst_' + Date.now();
+    const baseInstAmount = Math.floor((numAmount / count) * 100) / 100;
+    const remainder = Math.round((numAmount - baseInstAmount * count) * 100) / 100;
+    const baseDate = dueDate ? new Date(dueDate + 'T00:00:00') : new Date(Date.now() + 30 * 86400000);
+    const createdDebts: Debt[] = [];
+
+    for (let i = 1; i <= count; i++) {
+      const instDate = new Date(baseDate);
+      if (installmentFrequency === 'biweekly') {
+        instDate.setDate(instDate.getDate() + (i - 1) * 15);
+      } else {
+        instDate.setMonth(instDate.getMonth() + (i - 1));
+      }
+      const instDueDateStr = instDate.toISOString().split('T')[0];
+      const instAmount = i === count ? Number((baseInstAmount + remainder).toFixed(2)) : baseInstAmount;
+
+      const newDebtItem: Debt = {
+        id: `d_${Date.now()}_${i}_${Math.floor(Math.random() * 1000)}`,
+        creatorPhone,
+        creditorPhone,
+        debtorPhone,
+        amount: instAmount,
+        originalAmount: instAmount,
+        description: `${description} (${i}/${count})`,
+        category: category || 'Geral',
+        date: new Date().toISOString().split('T')[0],
+        dueDate: instDueDateStr,
+        status: debtorPhone === creatorPhone || creditorPhone === creatorPhone ? 'confirmed' : 'pending_confirmation',
+        sharedPhones: sharedPhones || [],
+        installmentNumber: i,
+        totalInstallments: count,
+        parentInstallmentId
+      };
+
+      data.debts.push(newDebtItem);
+      createdDebts.push(newDebtItem);
+    }
+
+    // Notify debtor about installment plan
+    if (debtorPhone && debtorPhone !== creatorPhone) {
+      const creditorUser = data.users.find(u => u.phone === creditorPhone)?.name || 'Alguém';
+      data.notifications.push({
+        id: 'n_' + Date.now() + Math.random(),
+        recipientPhone: debtorPhone,
+        senderPhone: creatorPhone,
+        type: 'debt_request',
+        title: 'Nova Compra Parcelada Registrada',
+        message: `${creditorUser} registrou uma conta parcelada em ${count}x de R$ ${(numAmount / count).toFixed(2)} (${description}) com você. Toque para confirmar.`,
+        relatedId: createdDebts[0].id,
+        read: false,
+        createdAt: new Date().toISOString()
+      });
+    }
+
+    saveData(data);
+    return res.json(createdDebts[0]);
+  }
 
   const newDebt: Debt = {
     id: 'd_' + Date.now(),

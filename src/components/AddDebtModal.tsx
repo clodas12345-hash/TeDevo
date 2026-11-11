@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { User } from '../types';
-import { X, DollarSign, Calendar, Users, Phone, FileText } from 'lucide-react';
+import { X, DollarSign, Calendar, Users, Phone, FileText, CreditCard } from 'lucide-react';
 
 interface AddDebtModalProps {
   currentUser: User;
@@ -24,10 +24,20 @@ export function AddDebtModal({ currentUser, users, onClose, onSuccess, initialVa
   const [dueDate, setDueDate] = useState(new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0]);
   const [isSplit, setIsSplit] = useState(false);
   const [splitPhones, setSplitPhones] = useState<string[]>([currentUser.phone]);
+
+  // Installment (Parcelamento) state
+  const [isInstallment, setIsInstallment] = useState(false);
+  const [installmentsCount, setInstallmentsCount] = useState<number>(3);
+  const [installmentFrequency, setInstallmentFrequency] = useState<'monthly' | 'biweekly'>('monthly');
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const targetPhone = selectedContactPhone || otherPhone;
+  const numAmount = parseFloat(amount) || 0;
+  const installmentAmountPreview = isInstallment && installmentsCount > 0 && numAmount > 0
+    ? (numAmount / installmentsCount).toFixed(2)
+    : '0.00';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,7 +45,6 @@ export function AddDebtModal({ currentUser, users, onClose, onSuccess, initialVa
       setError('Informe a descrição da dívida/conta.');
       return;
     }
-    const numAmount = parseFloat(amount);
     if (isNaN(numAmount) || numAmount <= 0) {
       setError('Informe um valor válido.');
       return;
@@ -63,7 +72,10 @@ export function AddDebtModal({ currentUser, users, onClose, onSuccess, initialVa
           description,
           category,
           dueDate,
-          sharedPhones: isSplit ? splitPhones : []
+          sharedPhones: isSplit ? splitPhones : [],
+          isInstallment,
+          installmentsCount: isInstallment ? installmentsCount : 1,
+          installmentFrequency
         })
       });
 
@@ -232,7 +244,7 @@ export function AddDebtModal({ currentUser, users, onClose, onSuccess, initialVa
 
           <div>
             <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">
-              Data de Vencimento Prevista
+              Data de Vencimento {isInstallment ? '(1ª Parcela)' : 'Prevista'}
             </label>
             <div className="relative">
               <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
@@ -245,6 +257,102 @@ export function AddDebtModal({ currentUser, users, onClose, onSuccess, initialVa
                 className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
               />
             </div>
+          </div>
+
+          {/* Installment (Parcelada) Option */}
+          <div className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                  <CreditCard className="w-4 h-4" />
+                </div>
+                <div>
+                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block">
+                    Conta / Compra Parcelada?
+                  </span>
+                  <span className="text-[11px] text-slate-500 block">
+                    Divida o valor em parcelas (2x até 48x) no calendário
+                  </span>
+                </div>
+              </div>
+              <input
+                type="checkbox"
+                checked={isInstallment}
+                onChange={e => setIsInstallment(e.target.checked)}
+                className="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500 cursor-pointer"
+              />
+            </div>
+
+            {isInstallment && (
+              <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-700 space-y-3">
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-300 mb-1.5">
+                    Número de Parcelas:
+                  </label>
+                  <div className="grid grid-cols-6 gap-1.5">
+                    {[2, 3, 4, 6, 10, 12].map(n => (
+                      <button
+                        key={n}
+                        type="button"
+                        onClick={() => setInstallmentsCount(n)}
+                        className={`py-2 rounded-xl text-xs font-bold transition-all ${
+                          installmentsCount === n
+                            ? 'bg-emerald-600 text-white shadow-xs scale-102'
+                            : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
+                        }`}
+                      >
+                        {n}x
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-300 mb-1">
+                      Intervalo
+                    </label>
+                    <select
+                      value={installmentFrequency}
+                      onChange={e => setInstallmentFrequency(e.target.value as any)}
+                      className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white"
+                    >
+                      <option value="monthly">Mensal (a cada 30 dias)</option>
+                      <option value="biweekly">Quinzenal (a cada 15 dias)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-300 mb-1">
+                      Ou digite outro nº
+                    </label>
+                    <input
+                      type="number"
+                      min={2}
+                      max={48}
+                      value={installmentsCount}
+                      onChange={e => setInstallmentsCount(Math.max(2, parseInt(e.target.value) || 2))}
+                      className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white"
+                    />
+                  </div>
+                </div>
+
+                {numAmount > 0 && (
+                  <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-xl text-xs flex items-center justify-between text-emerald-900 dark:text-emerald-200">
+                    <div>
+                      <span className="block text-[11px] text-emerald-700 dark:text-emerald-400">
+                        Resumo do Parcelamento:
+                      </span>
+                      <strong className="text-sm font-black">
+                        {installmentsCount}x de R$ {installmentAmountPreview}
+                      </strong>
+                    </div>
+                    <div className="text-right text-[11px] text-emerald-700 dark:text-emerald-400">
+                      <span>Total: R$ {numAmount.toFixed(2)}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Multi-person split option */}

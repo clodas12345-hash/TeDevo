@@ -1,15 +1,16 @@
 import { useState } from 'react';
-import { User, RecurringItem } from '../types';
-import { Calendar as CalendarIcon, Plus, Sparkles, Clock } from 'lucide-react';
+import { User, RecurringItem, Debt } from '../types';
+import { Calendar as CalendarIcon, Plus, Sparkles, Clock, CreditCard, ArrowRight } from 'lucide-react';
 
 interface CalendarViewProps {
   currentUser: User;
   users: User[];
   recurring: RecurringItem[];
+  debts?: Debt[];
   onAddRecurring: (item: { title: string; amount: number; frequencyDays: number; description: string; targetPhone: string }) => void;
 }
 
-export function CalendarView({ currentUser, users, recurring, onAddRecurring }: CalendarViewProps) {
+export function CalendarView({ currentUser, users, recurring, debts = [], onAddRecurring }: CalendarViewProps) {
   const [showAdd, setShowAdd] = useState(false);
   const [title, setTitle] = useState('Faxina Quinzenal');
   const [amount, setAmount] = useState('150');
@@ -117,6 +118,68 @@ export function CalendarView({ currentUser, users, recurring, onAddRecurring }: 
             </div>
           );
         })}
+      </div>
+
+      {/* Installment Schedule & Upcoming Due Dates */}
+      <div className="space-y-4 pt-4">
+        <div className="flex items-center gap-2">
+          <CreditCard className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+          <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+            Cronograma de Parcelas & Vencimentos
+          </h3>
+        </div>
+
+        {debts.filter(d => (d.debtorPhone === currentUser.phone || d.creditorPhone === currentUser.phone) && d.dueDate && d.status !== 'settled').length === 0 ? (
+          <div className="p-6 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 text-center text-xs text-slate-500">
+            Nenhuma parcela ou conta pendente com vencimento agendado.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            {debts
+              .filter(d => (d.debtorPhone === currentUser.phone || d.creditorPhone === currentUser.phone) && d.dueDate && d.status !== 'settled')
+              .sort((a, b) => (a.dueDate || '').localeCompare(b.dueDate || ''))
+              .map(debt => {
+                const isIOwe = debt.debtorPhone === currentUser.phone;
+                const otherPhone = isIOwe ? debt.creditorPhone : debt.debtorPhone;
+                const otherName = getUserName(otherPhone);
+
+                return (
+                  <div
+                    key={debt.id}
+                    className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs flex items-center justify-between gap-3"
+                  >
+                    <div>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                          {debt.description}
+                        </span>
+                        {debt.installmentNumber && debt.totalInstallments && (
+                          <span className="px-1.5 py-0.2 text-[9px] font-bold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 rounded border border-indigo-200 dark:border-indigo-800">
+                            {debt.installmentNumber}/{debt.totalInstallments}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-slate-500 mt-0.5">
+                        {isIOwe ? `Pagar para ${otherName}` : `Receber de ${otherName}`}
+                      </p>
+                      <span className="inline-block mt-1 text-[10px] text-slate-400 font-mono">
+                        📅 Vence em: {debt.dueDate}
+                      </span>
+                    </div>
+
+                    <div className="text-right shrink-0">
+                      <div className={`text-sm font-black tabular-nums ${isIOwe ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                        R$ {debt.amount.toFixed(2)}
+                      </div>
+                      <span className={`text-[10px] font-bold ${isIOwe ? 'text-red-500' : 'text-emerald-600'}`}>
+                        {isIOwe ? 'A Pagar' : 'A Receber'}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+          </div>
+        )}
       </div>
 
       {/* Add Recurring Modal */}

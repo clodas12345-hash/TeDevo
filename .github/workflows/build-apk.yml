@@ -23,10 +23,10 @@ jobs:
           java-version: '17'
           cache: 'gradle'
 
-      - name: 3. Configurar Node.js
+      - name: 3. Configurar Node.js (LTS 22)
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: 4. Instalar dependências npm
         run: npm install --legacy-peer-deps
@@ -37,6 +37,7 @@ jobs:
       - name: 6. Inicializar e sincronizar Capacitor Android
         run: |
           if [ ! -f "android/gradlew" ]; then
+            rm -rf android
             npx cap add android
           fi
           npx cap sync android

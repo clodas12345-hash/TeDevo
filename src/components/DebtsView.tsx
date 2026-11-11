@@ -172,6 +172,11 @@ export function DebtsView({
                       <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
                         {debt.category}
                       </span>
+                      {debt.installmentNumber && debt.totalInstallments && (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
+                          💳 Parcela {debt.installmentNumber}/{debt.totalInstallments}
+                        </span>
+                      )}
                       {/* Badge explícita de status de cobrança */}
                       {!isSettled && isDebtor && (
                         <span className="px-2 py-0.5 rounded-md text-[11px] font-bold bg-red-500 text-white shadow-xs">
