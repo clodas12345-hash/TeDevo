@@ -34,13 +34,79 @@ jobs:
       - name: 5. Compilar aplicação Web (Vite)
         run: npm run build
 
-      - name: 6. Inicializar e sincronizar Capacitor Android
+      - name: 6. Inicializar, sincronizar e configurar Capacitor Android
         run: |
           if [ ! -f "android/gradlew" ]; then
             rm -rf android
             npx cap add android
           fi
           npx cap sync android
+
+          # 1. Forçar Android 15 (API 35) e dependências estáveis AndroidX compatíveis com o GitHub Actions runner
+          cat << 'EOF' > android/variables.gradle
+          ext {
+              minSdkVersion = 24
+              compileSdkVersion = 35
+              targetSdkVersion = 35
+              androidxActivityVersion = '1.9.3'
+              androidxAppCompatVersion = '1.7.0'
+              androidxCoordinatorLayoutVersion = '1.2.0'
+              androidxCoreVersion = '1.15.0'
+              androidxFragmentVersion = '1.8.5'
+              coreSplashScreenVersion = '1.0.1'
+              androidxWebkitVersion = '1.12.1'
+              junitVersion = '4.13.2'
+              androidxJunitVersion = '1.2.1'
+              androidxEspressoCoreVersion = '3.6.1'
+              cordovaAndroidVersion = '14.0.0'
+          }
+          EOF
+
+          # 2. Garantir criação das cores do tema no colors.xml (necessário para AAPT2)
+          mkdir -p android/app/src/main/res/values
+          cat << 'EOF' > android/app/src/main/res/values/colors.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources>
+              <color name="colorPrimary">#059669</color>
+              <color name="colorPrimaryDark">#047857</color>
+              <color name="colorAccent">#10b981</color>
+          </resources>
+          EOF
+
+          # 3. Garantir google-services.json para o Google Services plugin
+          if [ ! -f "android/app/google-services.json" ]; then
+            cat << 'EOF' > android/app/google-services.json
+          {
+            "project_info": {
+              "project_number": "100000000000",
+              "project_id": "tedevo-app",
+              "storage_bucket": "tedevo-app.appspot.com"
+            },
+            "client": [
+              {
+                "client_info": {
+                  "mobilesdk_app_id": "1:100000000000:android:tedevo000000000",
+                  "android_client_info": {
+                    "package_name": "com.tedevo.app"
+                  }
+                },
+                "oauth_client": [],
+                "api_key": [
+                  {
+                    "current_key": "AIzaSyDummyKeyForTedevoAppBuild0000000"
+                  }
+                ],
+                "services": {
+                  "appinvite_service": {
+                    "other_platform_oauth_client": []
+                  }
+                }
+              }
+            ],
+            "configuration_version": "1"
+          }
+          EOF
+          fi
 
       - name: 7. Conceder permissão de execução ao Gradle Wrapper
         run: |
