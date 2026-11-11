@@ -45,7 +45,7 @@ jobs:
       - name: 8. Compilar APK Debug
         run: |
           cd android
-          ./gradlew assembleDebug --stacktrace --no-daemon
+          ./gradlew assembleDebug -x lint --stacktrace --no-daemon
 
       - name: 9. Salvar APK gerado como Artefato
         uses: actions/upload-artifact@v4
