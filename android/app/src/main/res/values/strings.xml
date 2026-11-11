@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">TeDevo</string>
+    <string name="title_activity_main">TeDevo</string>
+    <string name="package_name">com.tedevo.app</string>
+    <string name="custom_url_scheme">com.tedevo.app</string>
+</resources>

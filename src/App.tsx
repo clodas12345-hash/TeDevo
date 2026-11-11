@@ -188,6 +188,39 @@ export default function App() {
     }
   };
 
+  const handleDeleteUser = async (phone: string, deleteDebts: boolean = true) => {
+    try {
+      const res = await fetch(`/api/users/${encodeURIComponent(phone)}?deleteDebts=${deleteDebts}`, {
+        method: 'DELETE'
+      });
+      if (!res.ok) {
+        throw new Error('Falha ao excluir pessoa.');
+      }
+      await fetchData();
+    } catch (err) {
+      console.error('Error deleting user:', err);
+      throw err;
+    }
+  };
+
+  const handleAddUser = async (user: { name: string; phone: string; avatar?: string }) => {
+    try {
+      const res = await fetch('/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(user)
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Falha ao adicionar pessoa.');
+      }
+      await fetchData();
+    } catch (err) {
+      console.error('Error adding user:', err);
+      throw err;
+    }
+  };
+
   const handleQuickDiarista = () => {
     setInitialDebtValues({
       description: 'Faxina do apartamento quinzenal',
@@ -269,6 +302,8 @@ export default function App() {
               setInitialDebtValues(undefined);
               setShowAddDebt(true);
             }}
+            onDeleteUser={handleDeleteUser}
+            onAddUser={handleAddUser}
           />
         )}
       </main>

@@ -262,6 +262,52 @@ app.post('/api/auth/login', (req, res) => {
   res.json(user);
 });
 
+// Delete user from community list
+app.delete('/api/users/:phone', (req, res) => {
+  const { phone } = req.params;
+  const deleteDebts = req.query.deleteDebts === 'true';
+  const data = loadData();
+  const clean = normalizePhone(phone);
+
+  data.users = data.users.filter(u => normalizePhone(u.phone) !== clean);
+
+  if (deleteDebts) {
+    data.debts = data.debts.filter(d => normalizePhone(d.debtorPhone) !== clean && normalizePhone(d.creditorPhone) !== clean);
+    data.payments = data.payments.filter(p => normalizePhone(p.payerPhone) !== clean && normalizePhone(p.receiverPhone) !== clean);
+    data.notifications = data.notifications.filter(n => normalizePhone(n.recipientPhone) !== clean && normalizePhone(n.senderPhone) !== clean);
+    data.recurring = data.recurring.filter(r => normalizePhone(r.targetPhone) !== clean && normalizePhone(r.creatorPhone) !== clean);
+  }
+
+  saveData(data);
+  res.json({ success: true, users: data.users, debts: data.debts });
+});
+
+// Add new user / contact to community
+app.post('/api/users', (req, res) => {
+  const { name, phone, avatar } = req.body;
+  if (!phone || !name) {
+    return res.status(400).json({ error: 'Nome e telefone são obrigatórios.' });
+  }
+  const clean = normalizePhone(phone);
+  const data = loadData();
+  const existing = data.users.find(u => normalizePhone(u.phone) === clean);
+  if (existing) {
+    return res.status(400).json({ error: 'Já existe uma pessoa cadastrada com este telefone.' });
+  }
+
+  const newUser: User = {
+    id: Date.now().toString(),
+    name: name.trim(),
+    phone: clean,
+    pin: '1234',
+    avatar: avatar || '👤'
+  };
+
+  data.users.push(newUser);
+  saveData(data);
+  res.json({ success: true, user: newUser });
+});
+
 // Add Debt
 app.post('/api/debts', (req, res) => {
   const { creatorPhone, creditorPhone, debtorPhone, amount, description, category, dueDate, sharedPhones } = req.body;

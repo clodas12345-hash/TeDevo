@@ -29,26 +29,24 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
 
       - name: 5. Instalar dependências npm
-        run: npm install
+        run: npm install --legacy-peer-deps
 
       - name: 6. Compilar aplicação Web (Vite)
         run: npm run build
 
       - name: 7. Inicializar e sincronizar Capacitor Android
         run: |
-          if [ ! -d "android/app" ]; then
+          if [ ! -f "android/gradlew" ]; then
             npx cap add android
           fi
           npx cap sync android
 
       - name: 8. Garantir permissões completas no AndroidManifest.xml
         run: |
-          # Copia o AndroidManifest configurado com permissões de agenda, notificações, câmera, microfone e arquivos
           if [ -f "android/app/src/main/AndroidManifest.xml" ]; then
-            echo "AndroidManifest.xml já configurado."
+            echo "AndroidManifest.xml já configurado com permissões de agenda, notificações, câmera, microfone e arquivos."
           fi
 
       - name: 9. Conceder permissão de execução ao Gradle Wrapper
@@ -60,7 +58,7 @@ jobs:
       - name: 10. Compilar APK Debug
         run: |
           cd android
-          ./gradlew assembleDebug --stacktrace
+          ./gradlew assembleDebug --stacktrace --no-daemon
 
       - name: 11. Salvar APK gerado como Artefato do GitHub
         uses: actions/upload-artifact@v4
