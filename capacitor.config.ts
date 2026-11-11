@@ -1,14 +1,10 @@
-export default {
+import type { CapacitorConfig } from '@capacitor/cli';
+
+const config: CapacitorConfig = {
   appId: 'com.tedevo.app',
   appName: 'TeDevo',
   webDir: 'dist',
-  server: {
-    androidScheme: 'https',
-    cleartext: true
-  },
-  plugins: {
-    PushNotifications: {
-      presentationOptions: ["badge", "sound", "alert"]
-    }
-  }
+  bundledWebRuntime: false
 };
+
+export default config;
