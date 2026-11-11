@@ -1,4 +1,4 @@
-import { t as WebPlugin } from "./index-OWu5cmIY.js";
+import { t as WebPlugin } from "./index-uIslQxgS.js";
 // node_modules/@capacitor/app/dist/esm/web.js
 var AppWeb = class extends WebPlugin {
 	constructor() {
@@ -25,12 +25,6 @@ var AppWeb = class extends WebPlugin {
 	}
 	async minimizeApp() {
 		throw this.unimplemented("Not implemented on web.");
-	}
-	async toggleBackButtonHandler() {
-		throw this.unimplemented("Not implemented on web.");
-	}
-	async getAppLanguage() {
-		return { value: navigator.language.split("-")[0].toLowerCase() };
 	}
 };
 export { AppWeb };

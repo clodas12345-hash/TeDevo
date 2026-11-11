@@ -11434,6 +11434,30 @@ var require_client = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 var import_react = require_react();
 var import_client = require_client();
 /*! Capacitor: https://capacitorjs.com/ - MIT License */
+var createCapacitorPlatforms = (win) => {
+	const defaultPlatformMap = /* @__PURE__ */ new Map();
+	defaultPlatformMap.set("web", { name: "web" });
+	const capPlatforms = win.CapacitorPlatforms || {
+		currentPlatform: { name: "web" },
+		platforms: defaultPlatformMap
+	};
+	const addPlatform = (name, platform) => {
+		capPlatforms.platforms.set(name, platform);
+	};
+	const setPlatform = (name) => {
+		if (capPlatforms.platforms.has(name)) capPlatforms.currentPlatform = capPlatforms.platforms.get(name);
+	};
+	capPlatforms.addPlatform = addPlatform;
+	capPlatforms.setPlatform = setPlatform;
+	return capPlatforms;
+};
+var initPlatforms = (win) => win.CapacitorPlatforms = createCapacitorPlatforms(win);
+/**
+* @deprecated Set `CapacitorCustomPlatform` on the window object prior to runtime executing in the web app instead
+*/
+var CapacitorPlatforms = /*#__PURE__*/ initPlatforms(typeof globalThis !== "undefined" ? globalThis : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : typeof global !== "undefined" ? global : {});
+CapacitorPlatforms.addPlatform;
+CapacitorPlatforms.setPlatform;
 var ExceptionCode;
 (function(ExceptionCode) {
 	/**
@@ -11467,26 +11491,38 @@ var getPlatformId = (win) => {
 	else return "web";
 };
 var createCapacitor = (win) => {
+	var _a, _b, _c, _d, _e;
 	const capCustomPlatform = win.CapacitorCustomPlatform || null;
 	const cap = win.Capacitor || {};
 	const Plugins = cap.Plugins = cap.Plugins || {};
-	const getPlatform = () => {
+	/**
+	* @deprecated Use `capCustomPlatform` instead, default functions like registerPlugin will function with the new object.
+	*/
+	const capPlatforms = win.CapacitorPlatforms;
+	const defaultGetPlatform = () => {
 		return capCustomPlatform !== null ? capCustomPlatform.name : getPlatformId(win);
 	};
-	const isNativePlatform = () => getPlatform() !== "web";
-	const isPluginAvailable = (pluginName) => {
+	const getPlatform = ((_a = capPlatforms === null || capPlatforms === void 0 ? void 0 : capPlatforms.currentPlatform) === null || _a === void 0 ? void 0 : _a.getPlatform) || defaultGetPlatform;
+	const defaultIsNativePlatform = () => getPlatform() !== "web";
+	const isNativePlatform = ((_b = capPlatforms === null || capPlatforms === void 0 ? void 0 : capPlatforms.currentPlatform) === null || _b === void 0 ? void 0 : _b.isNativePlatform) || defaultIsNativePlatform;
+	const defaultIsPluginAvailable = (pluginName) => {
 		const plugin = registeredPlugins.get(pluginName);
 		if (plugin === null || plugin === void 0 ? void 0 : plugin.platforms.has(getPlatform())) return true;
 		if (getPluginHeader(pluginName)) return true;
 		return false;
 	};
-	const getPluginHeader = (pluginName) => {
+	const isPluginAvailable = ((_c = capPlatforms === null || capPlatforms === void 0 ? void 0 : capPlatforms.currentPlatform) === null || _c === void 0 ? void 0 : _c.isPluginAvailable) || defaultIsPluginAvailable;
+	const defaultGetPluginHeader = (pluginName) => {
 		var _a;
 		return (_a = cap.PluginHeaders) === null || _a === void 0 ? void 0 : _a.find((h) => h.name === pluginName);
 	};
+	const getPluginHeader = ((_d = capPlatforms === null || capPlatforms === void 0 ? void 0 : capPlatforms.currentPlatform) === null || _d === void 0 ? void 0 : _d.getPluginHeader) || defaultGetPluginHeader;
 	const handleError = (err) => win.console.error(err);
+	const pluginMethodNoop = (_target, prop, pluginName) => {
+		return Promise.reject(`${pluginName} does not have an implementation of "${prop}".`);
+	};
 	const registeredPlugins = /* @__PURE__ */ new Map();
-	const registerPlugin = (pluginName, jsImplementations = {}) => {
+	const defaultRegisterPlugin = (pluginName, jsImplementations = {}) => {
 		const registeredPlugin = registeredPlugins.get(pluginName);
 		if (registeredPlugin) {
 			console.warn(`Capacitor plugin "${pluginName}" already registered. Cannot register plugins twice.`);
@@ -11568,28 +11604,37 @@ var createCapacitor = (win) => {
 		});
 		return proxy;
 	};
+	const registerPlugin = ((_e = capPlatforms === null || capPlatforms === void 0 ? void 0 : capPlatforms.currentPlatform) === null || _e === void 0 ? void 0 : _e.registerPlugin) || defaultRegisterPlugin;
 	if (!cap.convertFileSrc) cap.convertFileSrc = (filePath) => filePath;
 	cap.getPlatform = getPlatform;
 	cap.handleError = handleError;
 	cap.isNativePlatform = isNativePlatform;
 	cap.isPluginAvailable = isPluginAvailable;
+	cap.pluginMethodNoop = pluginMethodNoop;
 	cap.registerPlugin = registerPlugin;
 	cap.Exception = CapacitorException;
 	cap.DEBUG = !!cap.DEBUG;
 	cap.isLoggingEnabled = !!cap.isLoggingEnabled;
+	cap.platform = cap.getPlatform();
+	cap.isNative = cap.isNativePlatform();
 	return cap;
 };
 var initCapacitorGlobal = (win) => win.Capacitor = createCapacitor(win);
 var Capacitor = /*#__PURE__*/ initCapacitorGlobal(typeof globalThis !== "undefined" ? globalThis : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : typeof global !== "undefined" ? global : {});
 var registerPlugin = Capacitor.registerPlugin;
+Capacitor.Plugins;
 /**
 * Base class web plugins should extend.
 */
 var WebPlugin = class {
-	constructor() {
+	constructor(config) {
 		this.listeners = {};
 		this.retainedEventArguments = {};
 		this.windowListeners = {};
+		if (config) {
+			console.warn(`Capacitor WebPlugin "${config.name}" config object was deprecated in v3 and will be removed in v4.`);
+			this.config = config;
+		}
 	}
 	addListener(eventName, listenerFunc) {
 		let firstListener = false;
@@ -11623,8 +11668,7 @@ var WebPlugin = class {
 		listeners.forEach((listener) => listener(data));
 	}
 	hasListeners(eventName) {
-		var _a;
-		return !!((_a = this.listeners[eventName]) === null || _a === void 0 ? void 0 : _a.length);
+		return !!this.listeners[eventName].length;
 	}
 	registerWindowListener(windowEventName, pluginEventName) {
 		this.windowListeners[pluginEventName] = {
@@ -11646,7 +11690,7 @@ var WebPlugin = class {
 		const listeners = this.listeners[eventName];
 		if (!listeners) return;
 		const index = listeners.indexOf(listenerFunc);
-		if (index !== -1) this.listeners[eventName].splice(index, 1);
+		this.listeners[eventName].splice(index, 1);
 		if (!this.listeners[eventName].length) this.removeWindowListener(this.windowListeners[eventName]);
 	}
 	addWindowListener(handle) {
@@ -11696,7 +11740,7 @@ var CapacitorCookiesPluginWeb = class extends WebPlugin {
 		try {
 			const encodedKey = encode(options.key);
 			const encodedValue = encode(options.value);
-			const expires = options.expires ? `; expires=${options.expires.replace("expires=", "")}` : "";
+			const expires = `; expires=${(options.expires || "").replace("expires=", "")}`;
 			const path = (options.path || "/").replace("path=", "");
 			const domain = options.url != null && options.url.length > 0 ? `domain=${options.url}` : "";
 			document.cookie = `${encodedKey}=${encodedValue || ""}${expires}; path=${path}; ${domain};`;
@@ -11880,67 +11924,6 @@ var CapacitorHttpPluginWeb = class extends WebPlugin {
 	}
 };
 registerPlugin("CapacitorHttp", { web: () => new CapacitorHttpPluginWeb() });
-/******** END HTTP PLUGIN ********/
-/******** SYSTEM BARS PLUGIN ********/
-/**
-* Available status bar styles.
-*/
-var SystemBarsStyle;
-(function(SystemBarsStyle) {
-	/**
-	* Light system bar content on a dark background.
-	*
-	* @since 8.0.0
-	*/
-	SystemBarsStyle["Dark"] = "DARK";
-	/**
-	* For dark system bar content on a light background.
-	*
-	* @since 8.0.0
-	*/
-	SystemBarsStyle["Light"] = "LIGHT";
-	/**
-	* The style is based on the device appearance or the underlying content.
-	* If the device is using Dark mode, the system bars content will be light.
-	* If the device is using Light mode, the system bars content will be dark.
-	*
-	* @since 8.0.0
-	*/
-	SystemBarsStyle["Default"] = "DEFAULT";
-})(SystemBarsStyle || (SystemBarsStyle = {}));
-/**
-* Available system bar types.
-*/
-var SystemBarType;
-(function(SystemBarType) {
-	/**
-	* The top status bar on both Android and iOS.
-	*
-	* @since 8.0.0
-	*/
-	SystemBarType["StatusBar"] = "StatusBar";
-	/**
-	* The navigation bar (or gesture bar on iOS) on both Android and iOS.
-	*
-	* @since 8.0.0
-	*/
-	SystemBarType["NavigationBar"] = "NavigationBar";
-})(SystemBarType || (SystemBarType = {}));
-var SystemBarsPluginWeb = class extends WebPlugin {
-	async setStyle() {
-		this.unavailable("not available for web");
-	}
-	async setAnimation() {
-		this.unavailable("not available for web");
-	}
-	async show() {
-		this.unavailable("not available for web");
-	}
-	async hide() {
-		this.unavailable("not available for web");
-	}
-};
-registerPlugin("SystemBars", { web: () => new SystemBarsPluginWeb() });
 // \0vite/preload-helper.js
 var scriptRel = "modulepreload";
 var assetsURL = function(dep) {
@@ -12042,7 +12025,7 @@ var __vitePreload = function preload(baseModule, deps, importerUrl) {
 	});
 };
 // node_modules/@capacitor/app/dist/esm/index.js
-var App$1 = registerPlugin("App", { web: () => __vitePreload(() => import("./web-CIAq5enY.js").then((m) => new m.AppWeb()), []) });
+var App$1 = registerPlugin("App", { web: () => __vitePreload(() => import("./web-CQ81MKIE.js").then((m) => new m.AppWeb()), []) });
 // node_modules/lucide-react/dist/esm/shared/src/utils.js
 /**
 * @license lucide-react v0.546.0 - ISC
